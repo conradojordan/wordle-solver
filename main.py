@@ -105,6 +105,7 @@ if __name__ == "__main__":
         "positional_not_found": ["" for i in range(5)],
         "not_found": [],
     }
+    previous_guesses = list()
 
     print(
         f"Suggested first guesses: {', '.join(find_next_best_word(all_words, remove_duplicate_letters=True))}"
@@ -117,6 +118,8 @@ if __name__ == "__main__":
         ).lower()
         if not guess:
             break
+        previous_guesses.append(guess)
+
         known_letters = get_found_positional_letters(known_letters)
         known_letters = get_found_regular_letters(known_letters)
         known_letters["not_found"] += list(
@@ -126,5 +129,12 @@ if __name__ == "__main__":
         )
         known_letters["not_found"] = list(set(known_letters["not_found"]))
         words, known_letters = update_words_with_new_information(words, known_letters)
-        print(f"\nSuggested next guesses: {', '.join(find_next_best_word(words))}")
+
+        # Do not suggest already guessed words
+        next_guesses = find_next_best_word(words)
+        for next_guess in next_guesses:
+            if next_guess in previous_guesses:
+                next_guesses.remove(next_guess)
+
+        print(f"\nSuggested next guesses: {', '.join(next_guesses)}")
     print("---- Congratulations on winning the game!!!! ----")
