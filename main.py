@@ -105,11 +105,11 @@ if __name__ == "__main__":
     }
 
     print(
-        f"Suggested first guesses: {', '.join(find_next_best_word(all_words, known_letters, remove_duplicate_letters=True))}"
+        f"Suggested first guesses: {', '.join(find_next_best_word(all_words, remove_duplicate_letters=True))}"
     )
 
     while True:
-        print("\nNext round!")
+        print("\n" + "Next round!".center(30, "-"))
         guess = input(
             "Enter this round's guess (or press enter if game is finished): "
         ).lower()
@@ -124,8 +124,5 @@ if __name__ == "__main__":
         )
         known_letters["not_found"] = list(set(known_letters["not_found"]))
         words, known_letters = update_words_with_new_information(words, known_letters)
-        print(known_letters)
-        print(
-            f"Suggested next guesses: {', '.join(find_next_best_word(words, known_letters))}"
-        )
-    print("Congratulations on winning the game!!".center(100, "-"))
+        print(f"\nSuggested next guesses: {', '.join(find_next_best_word(words))}")
+    print("---- Congratulations on winning the game!!!! ----")
