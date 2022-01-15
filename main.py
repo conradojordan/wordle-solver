@@ -18,6 +18,8 @@ def rank_word_by_letter_frequency(word, frequency):
 
 def find_next_best_word(words, *, remove_duplicate_letters=False):
     freq = letter_frequency(words)
+    found_words = list()
+
     for i in range(5, 26):
         current_letters = freq[:i]
         current_letters = "".join([l[0] for l in current_letters])
@@ -26,10 +28,10 @@ def find_next_best_word(words, *, remove_duplicate_letters=False):
         found_words = [word for word in words if regex.search(word)]
         if remove_duplicate_letters:
             found_words = [word for word in found_words if len(set(word)) == len(word)]
-        if found_words:
+        if len(found_words) > 5:
             break
     sorted_words = sorted(
-        found_words, key=lambda x: rank_word_by_letter_frequency(x, freq)
+        found_words, key=lambda x: rank_word_by_letter_frequency(x, freq), reverse=True
     )
     return sorted_words[:5]
 
