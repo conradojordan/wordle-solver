@@ -1,24 +1,24 @@
 import re
 from collections import Counter
 
-all_words = [word.strip() for word in open("words")]
+ALL_WORDS: list[str] = [word.strip() for word in open("words")]
 
 
-def letter_frequency(words):
+def letter_frequency(words: list[str]) -> list[tuple[str, int]]:
     return Counter("".join(words)).most_common(26)
 
 
-def rank_word_by_letter_frequency(word, frequency):
-    freq = [l[0] for l in frequency]
+def rank_word_by_letter_frequency(word: str, frequency: list[tuple[str, int]]):
+    freq = [letter[0] for letter in frequency]
     total = 0
     for letter in word:
         total += 26 - freq.index(letter)
     return total
 
 
-def find_next_best_word(words, *, remove_duplicate_letters=False):
+def find_next_best_word(words: list[str], *, remove_duplicate_letters: bool = False):
     freq = letter_frequency(words)
-    found_words = list()
+    found_words: list[str] = list()
 
     for i in range(5, 26):
         current_letters = freq[:i]
@@ -36,7 +36,9 @@ def find_next_best_word(words, *, remove_duplicate_letters=False):
     return sorted_words[:5]
 
 
-def update_words_with_new_information(words, known_letters):
+def update_words_with_new_information(
+    words: list[str], known_letters: dict[str, list[str]]
+) -> tuple[list[str], dict[str, list[str]]]:
     # Positional letters
     regex = "^"
     for letter in known_letters["positional"]:
@@ -68,47 +70,61 @@ def update_words_with_new_information(words, known_letters):
     return words, known_letters
 
 
-def get_found_positional_letters(known_letters):
-    if input("Did you find any positional letters (y/N)? ").lower() == "y":
-        while True:
-            letter = input(
-                "Enter positional letter (or press enter to continue): "
-            ).lower()
-            if not letter:
-                break
-            letter_position = int(input("Enter the position of the letter (1-5): ")) - 1
-            known_letters["positional"][letter_position] = letter
-    return known_letters
+def is_valid_result(result: str) -> bool:
+    if not set(result).issubset({"x", "g", "y"}):
+        return False
+
+    if len(result) != 5:
+        return False
+
+    return True
 
 
-def get_found_regular_letters(known_letters):
-    if (
-        input("Did you find any regular (non-positional) letters (y/N)? ").lower()
-        == "y"
-    ):
-        while True:
-            letter = input("Enter found letter (or press enter to continue): ").lower()
-            if not letter:
-                break
-            known_letters["regular"].append(letter)
-            letter_position = int(input("Enter the position of the letter (1-5): ")) - 1
-            known_letters["positional_not_found"][letter_position] += letter
-    known_letters["regular"] = list(set(known_letters["regular"]))
+def get_guess_result(known_letters: dict[str, list[str]], guess: str):
+    print("Enter the result of the guess.", end=" ")
+    print("Use 'x' for wrong, 'g' for green and 'y' for yellow (example 'xxgxy')")
+    result = input("Enter guess result: ").lower()
+
+    while not is_valid_result(result):
+        print(
+            "The given guess result is invalid, please enter 5 characters comprised of the letters 'x', 'g' and 'y'."
+        )
+        print(
+            "For example, enter 'gxgxy' if the first and third letters are green, the last one is yellow and the others are gray."
+        )
+        result = input("Enter guess result: ").lower()
+
+    for index, result_letter in enumerate(result):
+        guess_letter = guess[index]
+        match result_letter:
+            case "g":
+                known_letters["positional"][index] = guess_letter
+            case "y":
+                if guess_letter not in known_letters["regular"]:
+                    known_letters["regular"].append(guess_letter)
+
+                if guess_letter not in known_letters["positional_not_found"][index]:
+                    known_letters["positional_not_found"][index] += guess_letter
+            case "x":
+                known_letters["not_found"].append(guess_letter)
+            case _:
+                continue
+
     return known_letters
 
 
 if __name__ == "__main__":
-    words = all_words.copy()
-    known_letters = {
-        "positional": ["" for i in range(5)],
+    words = ALL_WORDS.copy()
+    known_letters: dict[str, list[str]] = {
+        "positional": ["" for _ in range(5)],
         "regular": [],
-        "positional_not_found": ["" for i in range(5)],
+        "positional_not_found": ["" for _ in range(5)],
         "not_found": [],
     }
-    previous_guesses = list()
+    previous_guesses: list[str] = list()
 
     print(
-        f"Suggested first guesses: {', '.join(find_next_best_word(all_words, remove_duplicate_letters=True))}"
+        f"Suggested first guesses: {', '.join(find_next_best_word(ALL_WORDS, remove_duplicate_letters=True))}"
     )
 
     while True:
@@ -120,14 +136,8 @@ if __name__ == "__main__":
             break
         previous_guesses.append(guess)
 
-        known_letters = get_found_positional_letters(known_letters)
-        known_letters = get_found_regular_letters(known_letters)
-        known_letters["not_found"] += list(
-            set(guess)
-            - set(known_letters["positional"])
-            - set(known_letters["regular"])
-        )
-        known_letters["not_found"] = list(set(known_letters["not_found"]))
+        known_letters: dict[str, list[str]] = get_guess_result(known_letters, guess)
+
         words, known_letters = update_words_with_new_information(words, known_letters)
 
         # Do not suggest already guessed words
